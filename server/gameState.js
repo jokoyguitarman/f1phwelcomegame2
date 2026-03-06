@@ -1,4 +1,4 @@
-e on const TEAMS = {
+const TEAMS = {
   1: { name: 'Blaze', color: '#FF5C1A', score: 0, playerIds: [] },
   2: { name: 'Surge', color: '#00C4B4', score: 0, playerIds: [] },
   3: { name: 'Volt', color: '#FFD600', score: 0, playerIds: [] },
