@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --f1-orange: #FF5C1A;
+  --f1-teal: #00C4B4;
+  --f1-yellow: #FFD600;
+  --f1-purple: #7C3AED;
+  --f1-pink: #F43F8E;
+  --f1-dark: #0A0A0F;
+  --f1-card: #13131A;
+  --team-1: #FF5C1A;
+  --team-2: #00C4B4;
+  --team-3: #FFD600;
+  --team-4: #7C3AED;
+  --team-5: #F43F8E;
+}
+
+body {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--f1-dark);
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: 'Syne', sans-serif;
+}
