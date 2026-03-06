@@ -1,6 +1,6 @@
 # Factor1 Team Icebreaker Game
 
-A real-time multiplayer browser game for team onboarding: 4 Pics 1 Word (things we use at work) and Draw Saurus.
+A real-time multiplayer browser game for team onboarding: **Draw Saurus** (drawing relay, teams guess the word).
 
 ## Stack
 
@@ -33,13 +33,9 @@ Runs at `http://localhost:5173` and proxies Socket.IO to the server.
 
 - Open `http://localhost:5173` — join with a display name (and optional email).
 - Open `http://localhost:5173/host` in another tab — click "Set host" then "Start Game" (min 1 player for testing).
-- Host uses **Next Question** to advance 4 Pics, and **End Round** to move to the next round. **Draw Saurus** advances automatically on correct guess or time.
+- Host uses **Next Question** to skip to the next word/team, and **End Round** to finish the game and show results. Draw Saurus advances automatically on correct guess or when time runs out.
 
-## Images
-
-- **4 Pics 1 Word:** Add images under `client/public/images/four-pics/` (e.g. `fp1-a.jpg` … `fp1-d.jpg` per question; answers: laptop, headphones, keyboard, webcam, coffee). See that folder’s README.
-
-See `factor1-game-build-plan.md` for full content and rules.
+See `factor1-game-build-plan.md` for full rules (Pass the Pen / Draw Saurus section).
 
 ## Env
 

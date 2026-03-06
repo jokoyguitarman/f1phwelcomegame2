@@ -1,7 +1,7 @@
 export const passThePenWords = [
   'meeting', 'deadline', 'coffee', 'laptop', 'teamwork', 'presentation', 'brainstorm',
-  'launch', 'feedback', 'onboarding', 'strategy', 'sprint', 'milestone', 'bug', 'deploy',
-  'pizza', 'weekend', 'standup', 'async', 'pivot', 'roadmap', 'celebration', 'office dog',
+  'launch', 'feedback', 'onboarding', 'strategy', 'sprint', 'milestone', 'headphones', 'monitor',
+  'pizza', 'weekend', 'webcam', 'mouse', 'charger', 'roadmap', 'celebration', 'notebook',
 ];
 
 export const DRAW_TURN_MS = 15000;
