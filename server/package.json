@@ -4,7 +4,11 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "generate-zoom-spy": "node scripts/generate-zoom-spy-images.js"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -23,12 +23,6 @@ import {
 } from './gameState.js';
 import { assignTeam } from './teamAssignment.js';
 import {
-  zoomSpyQuestions,
-  STAGE_DURATIONS_MS,
-  STAGE_POINTS,
-  checkAnswer as checkZoomSpyAnswer,
-} from './rounds/zoomSpy.js';
-import {
   fourPicsQuestions,
   FOUR_PICS_TIMER_MS,
   FIRST_CORRECT_POINTS,
@@ -125,31 +119,6 @@ io.on('connection', (socket) => {
     if (!isHost(socket.id)) return;
     const state = getState();
     if (state.phase === 'round1') {
-      const idx = state.roundState.zoomSpyQuestionIndex ?? 0;
-      if (idx >= zoomSpyQuestions.length) {
-        socket.emit('host:error', { message: 'No more Zoom Spy questions.' });
-        return;
-      }
-      const q = zoomSpyQuestions[idx];
-      setRoundState({
-        zoomSpyQuestionIndex: idx,
-        zoomSpyStage: 1,
-        zoomSpyAnswered: false,
-        zoomSpyStageStart: Date.now(),
-        zoomSpyGuessesThisStage: {},
-      });
-      setCurrentQuestion(q);
-      broadcast('question:next', {
-        questionId: q.id,
-        folder: q.folder,
-        stages: q.stages,
-        questionIndex: idx,
-        totalQuestions: zoomSpyQuestions.length,
-      });
-      broadcast('question:reveal', { stage: 1, imageUrl: `/${q.folder}/stage1.jpg`, totalStages: q.stages });
-      const duration = STAGE_DURATIONS_MS[0] ?? 30000;
-      setTimeout(() => advanceZoomSpyStage(), duration);
-    } else if (state.phase === 'round2') {
       const idx = state.roundState.fourPicsQuestionIndex ?? 0;
       if (idx >= fourPicsQuestions.length) {
         socket.emit('host:error', { message: 'No more 4 Pics questions.' });
@@ -170,44 +139,15 @@ io.on('connection', (socket) => {
         totalQuestions: fourPicsQuestions.length,
       });
       setTimeout(() => revealFourPicsIfNeeded(), FOUR_PICS_TIMER_MS);
-    } else if (state.phase === 'round3') {
+    } else if (state.phase === 'round2') {
       setRoundState({ ...getRoundState(), guessed: true });
       nextPassThePenTurn();
     }
   });
 
-  function advanceZoomSpyStage() {
-    const state = getState();
-    if (state.phase !== 'round1') return;
-    const rs = state.roundState;
-    const stage = (rs.zoomSpyStage ?? 0) + 1;
-    const q = state.currentQuestion;
-    if (!q || stage > (q.stages ?? 5)) {
-      return;
-    }
-    setRoundState({
-      ...rs,
-      zoomSpyStage: stage,
-      zoomSpyStageStart: Date.now(),
-      zoomSpyGuessesThisStage: {},
-    });
-    const stageIndex = stage - 1;
-    const duration = STAGE_DURATIONS_MS[stageIndex] ?? 5000;
-    const imageUrl = `/${q.folder}/stage${stage}.jpg`;
-    broadcast('question:reveal', { stage, imageUrl, totalStages: q.stages });
-    if (stage >= (q.stages ?? 5)) {
-      setTimeout(() => {
-        setRoundState({ ...getRoundState(), zoomSpyStageEnd: true });
-        broadcast('question:lock', {});
-      }, duration);
-    } else {
-      setTimeout(() => advanceZoomSpyStage(), duration);
-    }
-  }
-
   function revealFourPicsIfNeeded() {
     const state = getState();
-    if (state.phase !== 'round2') return;
+    if (state.phase !== 'round1') return;
     const rs = state.roundState;
     if (rs.fourPicsRevealed) return;
     setRoundState({ ...rs, fourPicsRevealed: true });
@@ -226,27 +166,6 @@ io.on('connection', (socket) => {
     const state = getState();
 
     if (state.phase === 'round1') {
-      const q = state.currentQuestion;
-      if (!q || q.id !== questionId) return;
-      const rs = state.roundState;
-      if (rs.zoomSpyAnswered) return;
-      const stage = rs.zoomSpyStage ?? 1;
-      if (rs.zoomSpyGuessesThisStage?.[teamId]) return;
-      const correct = checkZoomSpyAnswer(q, answer);
-      setRoundState({
-        ...rs,
-        zoomSpyGuessesThisStage: { ...(rs.zoomSpyGuessesThisStage || {}), [teamId]: true },
-      });
-      if (correct) {
-        setRoundState({ ...getRoundState(), zoomSpyAnswered: true });
-        const stageIndex = Math.max(0, stage - 1);
-        const points = STAGE_POINTS[stageIndex] ?? 1;
-        addScore(teamId, points);
-        broadcast('answer:correct', { teamId, teamName: team.name, points });
-      } else {
-        io.to(state.hostSocketId).emit('answer:wrong', { teamId, teamName: team.name });
-      }
-    } else if (state.phase === 'round2') {
       const q = state.currentQuestion;
       if (!q || q.id !== questionId) return;
       const rs = state.roundState;
@@ -278,14 +197,8 @@ io.on('connection', (socket) => {
       setPhase('round2');
       setCurrentRound(2);
       setCurrentQuestion(null);
-      setRoundState({ fourPicsQuestionIndex: 0 });
-      broadcast('round:start', { round: 2, questionData: null });
-    } else if (state.phase === 'round2') {
-      setPhase('round3');
-      setCurrentRound(3);
-      setCurrentQuestion(null);
       startPassThePenRound();
-    } else if (state.phase === 'round3') {
+    } else if (state.phase === 'round2') {
       setPhase('results');
       broadcast('game:end', { finalScores: getFinalScores() });
     }
@@ -307,13 +220,13 @@ io.on('connection', (socket) => {
       guessed: false,
       drawingTeamId: order[0],
     });
-    broadcast('round:start', { round: 3, questionData: { round: 'passThePen' } });
+    broadcast('round:start', { round: 2, questionData: { round: 'passThePen' } });
     nextPassThePenTurn();
   }
 
   function nextPassThePenTurn() {
     const state = getState();
-    if (state.phase !== 'round3') return;
+    if (state.phase !== 'round2') return;
     const rs = state.roundState;
     const order = rs.drawOrder || [1, 2, 3, 4, 5];
     const words = rs.words || passThePenWords;
@@ -368,7 +281,7 @@ io.on('connection', (socket) => {
 
   function passThePenRotateDrawer() {
     const state = getState();
-    if (state.phase !== 'round3') return;
+    if (state.phase !== 'round2') return;
     const rs = state.roundState;
     if (rs.guessed) return;
     const drawerOrder = rs.passThePenDrawerOrder || [];
@@ -396,6 +309,7 @@ io.on('connection', (socket) => {
     const player = getPlayer(socket.id);
     if (!player) return;
     const state = getState();
+    if (state.phase !== 'round2') return;
     const rs = state.roundState;
     if (rs.drawingTeamId !== player.teamId) return;
     const drawerOrder = rs.passThePenDrawerOrder || [];
@@ -410,6 +324,7 @@ io.on('connection', (socket) => {
     const player = getPlayer(socket.id);
     if (!player) return;
     const state = getState();
+    if (state.phase !== 'round2') return;
     const rs = state.roundState;
     if (rs.drawingTeamId !== player.teamId) return;
     const drawerOrder = rs.passThePenDrawerOrder || [];
@@ -422,7 +337,7 @@ io.on('connection', (socket) => {
     const player = getPlayer(socket.id);
     if (!player) return;
     const state = getState();
-    if (state.phase !== 'round3') return;
+    if (state.phase !== 'round2') return;
     const rs = state.roundState;
     if (rs.guessed) return;
     const word = rs.passThePenWord;

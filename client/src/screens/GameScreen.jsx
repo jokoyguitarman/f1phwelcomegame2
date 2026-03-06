@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import socket from '../socket';
 import TeamBadge from '../components/TeamBadge';
 import Scoreboard from '../components/Scoreboard';
-import ZoomSpy from '../rounds/ZoomSpy';
 import FourPicsOneWord from '../rounds/FourPicsOneWord';
 import PassThePen from '../rounds/PassThePen';
 
-const ROUND_NAMES = { 1: 'Zoom Spy', 2: '4 Pics 1 Word', 3: 'Pass the Pen' };
+const ROUND_NAMES = { 1: '4 Pics 1 Word', 2: 'Draw Saurus' };
 const TEAM_NAMES = { 1: 'Blaze', 2: 'Surge', 3: 'Volt', 4: 'Nova', 5: 'Pulse' };
 const TEAM_COLORS = { 1: '#FF5C1A', 2: '#00C4B4', 3: '#FFD600', 4: '#7C3AED', 5: '#F43F8E' };
 
@@ -22,8 +21,8 @@ export default function GameScreen() {
   const teamColor = localStorage.getItem('factor1-teamColor') || TEAM_COLORS[teamId];
 
   useEffect(() => {
-    const onGameStart = (data) => {
-      setRound(data.phase === 'round1' ? 1 : null);
+    const onGameStart = () => {
+      setRound(1);
     };
     const onRoundStart = (data) => {
       setRound(data.round);
@@ -77,21 +76,20 @@ export default function GameScreen() {
     );
   }
 
-  const currentRound = round ?? (questionData?.round === 'passThePen' ? 3 : questionData ? 2 : 1);
+  const currentRound = round ?? (questionData?.round === 'passThePen' ? 2 : questionData ? 1 : 1);
 
   return (
     <div className="min-h-screen bg-f1-dark flex flex-col">
       <header className="flex items-center justify-between px-4 py-2 bg-f1-card/80 border-b border-slate-700/50 shrink-0">
         <h1 className="font-syne text-lg text-white">
-          Round {currentRound} of 3 — {ROUND_NAMES[currentRound] || 'Game'}
+          Round {currentRound} of 2 — {ROUND_NAMES[currentRound] || 'Game'}
         </h1>
         <TeamBadge name={teamName} color={teamColor} />
       </header>
 
       <main className="flex-1 overflow-hidden">
-        {currentRound === 1 && <ZoomSpy questionData={questionData} setRoundState={setRoundState} />}
-        {currentRound === 2 && <FourPicsOneWord questionData={questionData} setRoundState={setRoundState} />}
-        {currentRound === 3 && <PassThePen questionData={questionData} roundState={roundState} setRoundState={setRoundState} />}
+        {currentRound === 1 && <FourPicsOneWord questionData={questionData} setRoundState={setRoundState} />}
+        {currentRound === 2 && <PassThePen questionData={questionData} roundState={roundState} setRoundState={setRoundState} />}
       </main>
 
       <footer className="px-4 py-2 bg-f1-card/80 border-t border-slate-700/50 shrink-0">

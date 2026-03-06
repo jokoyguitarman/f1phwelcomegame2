@@ -1,33 +1,34 @@
+// 4 Pics 1 Word — things we use at work (remote work equipment & tools)
 export const fourPicsQuestions = [
   {
     id: 'fp1',
-    answer: 'empowerment',
+    answer: 'laptop',
     images: ['fp1-a.jpg', 'fp1-b.jpg', 'fp1-c.jpg', 'fp1-d.jpg'],
-    explanation: 'Delegation with guidance and taking ownership of your role.',
+    explanation: 'Your main work machine — for calls, code, and everything in between.',
   },
   {
     id: 'fp2',
-    answer: 'honesty',
+    answer: 'headphones',
     images: ['fp2-a.jpg', 'fp2-b.jpg', 'fp2-c.jpg', 'fp2-d.jpg'],
-    explanation: 'Being truthful, honest and staying true to your word.',
+    explanation: 'Essential for focus and clear calls when working remotely.',
   },
   {
     id: 'fp3',
-    answer: 'courage',
+    answer: 'keyboard',
     images: ['fp3-a.jpg', 'fp3-b.jpg', 'fp3-c.jpg', 'fp3-d.jpg'],
-    explanation: 'Being brave and resilient in the face of challenges and growth opportunities with open communication.',
+    explanation: 'Where the work gets typed out — mechanical or membrane.',
   },
   {
     id: 'fp4',
-    answer: 'fairness',
+    answer: 'webcam',
     images: ['fp4-a.jpg', 'fp4-b.jpg', 'fp4-c.jpg', 'fp4-d.jpg'],
-    explanation: 'Believe in fair and equal treatment of all without bias.',
+    explanation: 'How your team sees you on video calls.',
   },
   {
     id: 'fp5',
-    answer: 'respect',
+    answer: 'coffee',
     images: ['fp5-a.jpg', 'fp5-b.jpg', 'fp5-c.jpg', 'fp5-d.jpg'],
-    explanation: 'Treating others with consideration, dignity and empathy.',
+    explanation: 'The fuel of remote work — and many a morning standup.',
   },
 ];
 

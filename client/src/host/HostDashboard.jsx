@@ -41,7 +41,7 @@ export default function HostDashboard() {
       if (data.scores) setScores(data.scores);
     };
     const onRoundStart = (data) => {
-      setPhase(data.round === 2 ? 'round2' : data.round === 3 ? 'round3' : 'round1');
+      setPhase(data.round === 2 ? 'round2' : 'round1');
       setAnswerFeed([]);
     };
     const onWrong = (data) => {
@@ -131,13 +131,12 @@ export default function HostDashboard() {
             </>
           )}
 
-          {(phase === 'round1' || phase === 'round2' || phase === 'round3') && (
+          {(phase === 'round1' || phase === 'round2') && (
             <>
               <div className="rounded-xl bg-f1-card p-4 border border-slate-700/50">
                 <h2 className="font-syne text-lg text-white mb-2">
-                  {phase === 'round1' && 'Round 1 — Zoom Spy'}
-                  {phase === 'round2' && 'Round 2 — 4 Pics 1 Word'}
-                  {phase === 'round3' && 'Round 3 — Pass the Pen'}
+                  {phase === 'round1' && 'Round 1 — 4 Pics 1 Word'}
+                  {phase === 'round2' && 'Round 2 — Draw Saurus'}
                 </h2>
                 <div className="flex gap-2 flex-wrap">
                   <button
@@ -189,7 +188,7 @@ export default function HostDashboard() {
             teamIdToName={TEAM_NAMES}
             teamIdToColor={TEAM_COLORS}
           />
-          {(phase === 'round1' || phase === 'round2' || phase === 'round3') && (
+          {(phase === 'round1' || phase === 'round2') && (
             <div className="mt-4 pt-4 border-t border-slate-700">
               <p className="text-slate-500 text-sm mb-2">Award points</p>
               <div className="flex flex-wrap gap-2">

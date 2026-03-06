@@ -1,6 +1,6 @@
 # Factor1 Team Icebreaker Game
 
-A real-time multiplayer browser game for team onboarding: Zoom Spy, 4 Pics 1 Word (Factor1 values), and Pass the Pen.
+A real-time multiplayer browser game for team onboarding: 4 Pics 1 Word (things we use at work) and Draw Saurus.
 
 ## Stack
 
@@ -33,12 +33,11 @@ Runs at `http://localhost:5173` and proxies Socket.IO to the server.
 
 - Open `http://localhost:5173` — join with a display name (and optional email).
 - Open `http://localhost:5173/host` in another tab — click "Set host" then "Start Game" (min 1 player for testing).
-- Host uses **Next Question** to advance Zoom Spy / 4 Pics, and **End Round** to move to the next round. **Pass the Pen** advances automatically on correct guess or time.
+- Host uses **Next Question** to advance 4 Pics, and **End Round** to move to the next round. **Draw Saurus** advances automatically on correct guess or time.
 
 ## Images
 
-- **Zoom Spy:** Add image sets under `client/public/images/zoom-spy/q1/` … `q6/` with `stage1.jpg` … `stage5.jpg` per set.
-- **4 Pics:** Add images under `client/public/images/four-pics/` (e.g. `fp1-a.jpg` … `fp1-d.jpg` per value).
+- **4 Pics 1 Word:** Add images under `client/public/images/four-pics/` (e.g. `fp1-a.jpg` … `fp1-d.jpg` per question; answers: laptop, headphones, keyboard, webcam, coffee). See that folder’s README.
 
 See `factor1-game-build-plan.md` for full content and rules.
 
