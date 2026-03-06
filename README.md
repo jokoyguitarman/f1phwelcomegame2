@@ -32,7 +32,7 @@ Runs at `http://localhost:5173` and proxies Socket.IO to the server.
 ### 3. Play
 
 - Open `http://localhost:5173` — join with a display name (and optional email).
-- Open `http://localhost:5173/host` in another tab — click "Set host" then "Start Game" (min 10 players).
+- Open `http://localhost:5173/host` in another tab — click "Set host" then "Start Game" (min 1 player for testing).
 - Host uses **Next Question** to advance Zoom Spy / 4 Pics, and **End Round** to move to the next round. **Pass the Pen** advances automatically on correct guess or time.
 
 ## Images
@@ -53,6 +53,9 @@ Run the server on Railway, Render, or Fly.io (WebSockets supported). Build the c
 ### Vercel (client) + Render (server)
 
 1. Deploy the **server** to Render (e.g. from `server/` with build command `npm install`, start command `npm start`). Note the URL (e.g. `https://f1-ph-welcome-game.onrender.com`).
-2. Deploy the **client** to Vercel: connect the repo, set **Root Directory** to `client`, build command `npm run build`, output directory `dist`.
-3. In Vercel, add an **Environment Variable**: `VITE_SOCKET_URL` = `https://f1-ph-welcome-game.onrender.com` (no trailing slash). Redeploy so the build picks it up.
-4. Open the Vercel app URL to play; the client will connect to the Render server for the game.
+2. Deploy the **client** to Vercel:
+   - **Root Directory:** set to **`client`** (required — the app lives in this folder).
+   - Build command: `npm run build`. Output directory: `dist`.
+   - Add env var **`VITE_SOCKET_URL`** = `https://f1-ph-welcome-game.onrender.com` (no trailing slash).
+3. Redeploy the client after saving the env var so the build picks it up.
+4. Open the Vercel app URL to play; the client will connect to the Render server.

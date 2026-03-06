@@ -54,7 +54,7 @@ const io = new Server(httpServer, {
 });
 
 const ROOM = getRoomId();
-const MIN_PLAYERS_TO_START = 10;
+const MIN_PLAYERS_TO_START = 1;
 
 function broadcast(event, payload) {
   io.to(ROOM).emit(event, payload);

@@ -5,7 +5,7 @@ import Scoreboard from '../components/Scoreboard';
 
 const TEAM_NAMES = { 1: 'Blaze', 2: 'Surge', 3: 'Volt', 4: 'Nova', 5: 'Pulse' };
 const TEAM_COLORS = { 1: '#FF5C1A', 2: '#00C4B4', 3: '#FFD600', 4: '#7C3AED', 5: '#F43F8E' };
-const MIN_PLAYERS = 10;
+const MIN_PLAYERS = 1;
 
 export default function HostDashboard() {
   const navigate = useNavigate();
