@@ -48,4 +48,11 @@ See `factor1-game-build-plan.md` for full content and rules.
 
 ## Deploy
 
-Run the server on Railway, Render, or Fly.io (WebSockets supported). Build the client with `npm run build` and serve the `client/dist` folder (or host static files and point API/socket to the server URL).
+Run the server on Railway, Render, or Fly.io (WebSockets supported). Build the client with `npm run build` and serve the `client/dist` folder.
+
+### Vercel (client) + Render (server)
+
+1. Deploy the **server** to Render (e.g. from `server/` with build command `npm install`, start command `npm start`). Note the URL (e.g. `https://f1-ph-welcome-game.onrender.com`).
+2. Deploy the **client** to Vercel: connect the repo, set **Root Directory** to `client`, build command `npm run build`, output directory `dist`.
+3. In Vercel, add an **Environment Variable**: `VITE_SOCKET_URL` = `https://f1-ph-welcome-game.onrender.com` (no trailing slash). Redeploy so the build picks it up.
+4. Open the Vercel app URL to play; the client will connect to the Render server for the game.
