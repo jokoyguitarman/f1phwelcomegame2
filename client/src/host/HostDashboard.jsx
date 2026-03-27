@@ -15,6 +15,8 @@ export default function HostDashboard() {
   const [totalQuestions, setTotalQuestions] = useState(10);
   const [currentEmojis, setCurrentEmojis] = useState('');
   const [answerFeed, setAnswerFeed] = useState([]);
+  const [waitingForHost, setWaitingForHost] = useState(false);
+  const [revealedAnswer, setRevealedAnswer] = useState('');
   const [isHost, setIsHost] = useState(false);
   const [error, setError] = useState('');
 
@@ -47,18 +49,24 @@ export default function HostDashboard() {
       setQuestionNumber(data.questionNumber);
       setTotalQuestions(data.totalQuestions);
       setCurrentEmojis(data.emojis);
+      setWaitingForHost(false);
+      setRevealedAnswer('');
     };
     const onCorrect = (data) => {
       setAnswerFeed((prev) => [
         ...prev.slice(-19),
-        { type: 'correct', teamName: data.teamName, playerName: data.playerName, q: data.questionNumber },
+        { type: 'correct', teamName: data.teamName, playerName: data.playerName, points: data.points, rank: data.rank, q: data.questionNumber },
       ]);
     };
     const onTimeUp = (data) => {
+      setRevealedAnswer(data.answer || '');
       setAnswerFeed((prev) => [
         ...prev.slice(-19),
         { type: 'timeup', answer: data.answer, q: data.questionNumber },
       ]);
+    };
+    const onWaiting = () => {
+      setWaitingForHost(true);
     };
     const onScores = (d) => d.scores && setScores(d.scores);
 
@@ -68,6 +76,7 @@ export default function HostDashboard() {
     socket.on('emoji:question', onQuestion);
     socket.on('guess:correct', onCorrect);
     socket.on('emoji:timeUp', onTimeUp);
+    socket.on('emoji:waitingForHost', onWaiting);
     socket.on('scores:update', onScores);
 
     return () => {
@@ -77,12 +86,18 @@ export default function HostDashboard() {
       socket.off('emoji:question', onQuestion);
       socket.off('guess:correct', onCorrect);
       socket.off('emoji:timeUp', onTimeUp);
+      socket.off('emoji:waitingForHost', onWaiting);
       socket.off('scores:update', onScores);
     };
   }, []);
 
+  const [finalScores, setFinalScores] = useState([]);
+
   useEffect(() => {
-    const onGameEnd = () => setPhase('results');
+    const onGameEnd = (data) => {
+      setPhase('results');
+      if (data.finalScores) setFinalScores(data.finalScores);
+    };
     socket.on('game:end', onGameEnd);
     return () => socket.off('game:end', onGameEnd);
   }, []);
@@ -147,7 +162,7 @@ export default function HostDashboard() {
             <>
               <div className="rounded-xl bg-f1-card p-4 border border-slate-700/50">
                 <h2 className="font-syne text-lg text-white mb-2">Emoji Movie Quiz</h2>
-                <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center gap-4 mb-3">
                   <span className="text-slate-400 text-sm">
                     Question {questionNumber} / {totalQuestions}
                   </span>
@@ -155,13 +170,28 @@ export default function HostDashboard() {
                     <span className="text-3xl">{currentEmojis}</span>
                   )}
                 </div>
+                {revealedAnswer && (
+                  <div className="mb-3 px-3 py-2 rounded-lg bg-slate-700/50 border border-slate-600">
+                    <span className="text-slate-400 text-sm">Answer: </span>
+                    <span className="text-white font-syne font-semibold capitalize">{revealedAnswer}</span>
+                  </div>
+                )}
                 <div className="flex gap-2 flex-wrap">
-                  <button
-                    onClick={handleNextQuestion}
-                    className="px-4 py-2 rounded-lg bg-f1-teal text-white font-medium"
-                  >
-                    Skip / Next Question
-                  </button>
+                  {waitingForHost ? (
+                    <button
+                      onClick={handleNextQuestion}
+                      className="px-6 py-3 rounded-lg bg-f1-orange text-white font-syne font-semibold text-lg animate-pulse hover:animate-none"
+                    >
+                      {questionNumber >= totalQuestions ? 'Show Results' : 'Next Question'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleNextQuestion}
+                      className="px-4 py-2 rounded-lg bg-f1-teal text-white font-medium"
+                    >
+                      Skip Question
+                    </button>
+                  )}
                   <button
                     onClick={handleEndRound}
                     className="px-4 py-2 rounded-lg bg-slate-600 text-white font-medium"
@@ -179,7 +209,7 @@ export default function HostDashboard() {
                   <p key={i} className="text-sm">
                     {a.type === 'correct' && (
                       <span className="text-green-400">
-                        Q{a.q}: {a.teamName} got it! ({a.playerName})
+                        Q{a.q}: {a.teamName} +{a.points}pts — {a.playerName}
                       </span>
                     )}
                     {a.type === 'timeup' && (
@@ -194,41 +224,108 @@ export default function HostDashboard() {
           )}
 
           {phase === 'results' && (
-            <div className="rounded-xl bg-f1-card p-4 border border-slate-700/50">
-              <p className="text-white">Game over! Check the final scores.</p>
+            <div className="space-y-4">
+              <div className="rounded-xl bg-f1-card p-6 border border-slate-700/50">
+                <h2 className="font-syne text-xl text-white mb-4">Final Results</h2>
+                {finalScores.map((t, i) => (
+                  <div
+                    key={t.teamId}
+                    className="mb-4 rounded-lg overflow-hidden"
+                    style={{ backgroundColor: `${t.color}15` }}
+                  >
+                    <div
+                      className="flex items-center justify-between px-4 py-3"
+                      style={{ borderLeft: `4px solid ${t.color}` }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-slate-500 font-syne font-bold text-lg w-8">
+                          {i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : `${i + 1}th`}
+                        </span>
+                        <span className="font-syne font-bold text-lg" style={{ color: t.color }}>
+                          {t.name}
+                        </span>
+                      </div>
+                      <span className="text-white font-syne font-bold text-xl">{t.score} pts</span>
+                    </div>
+                    {t.members && t.members.length > 0 && (
+                      <div className="px-4 pb-3 pt-1 flex flex-wrap gap-2">
+                        {t.members.map((name, j) => (
+                          <span
+                            key={j}
+                            className="px-2 py-1 rounded text-sm"
+                            style={{ backgroundColor: `${t.color}25`, color: t.color }}
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
-        <div className="rounded-xl bg-f1-card p-4 border border-slate-700/50 h-fit">
-          <h2 className="font-syne text-lg text-white mb-4">Scoreboard</h2>
-          <Scoreboard
-            scores={scores}
-            teamIdToName={TEAM_NAMES}
-            teamIdToColor={TEAM_COLORS}
-          />
-          {phase === 'round1' && (
-            <div className="mt-4 pt-4 border-t border-slate-700">
-              <p className="text-slate-500 text-sm mb-2">Award points</p>
-              <div className="flex flex-wrap gap-2">
-                {[1, 2, 3, 4, 5].map((id) => (
-                  <span key={id} className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className="w-8 h-8 rounded bg-slate-700 text-white text-lg leading-none"
-                      onClick={() => handleAwardPoints(id, 1)}
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      className="w-8 h-8 rounded bg-slate-700 text-white text-lg leading-none"
-                      onClick={() => handleAwardPoints(id, -1)}
-                    >
-                      −
-                    </button>
-                    <span className="text-sm" style={{ color: TEAM_COLORS[id] }}>{TEAM_NAMES[id]}</span>
-                  </span>
+        <div className="space-y-4">
+          <div className="rounded-xl bg-f1-card p-4 border border-slate-700/50 h-fit">
+            <h2 className="font-syne text-lg text-white mb-4">Scoreboard</h2>
+            <Scoreboard
+              scores={scores}
+              teamIdToName={TEAM_NAMES}
+              teamIdToColor={TEAM_COLORS}
+            />
+            {phase === 'round1' && (
+              <div className="mt-4 pt-4 border-t border-slate-700">
+                <p className="text-slate-500 text-sm mb-2">Award points</p>
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3, 4, 5].map((id) => (
+                    <span key={id} className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        className="w-8 h-8 rounded bg-slate-700 text-white text-lg leading-none"
+                        onClick={() => handleAwardPoints(id, 1)}
+                      >
+                        +
+                      </button>
+                      <button
+                        type="button"
+                        className="w-8 h-8 rounded bg-slate-700 text-white text-lg leading-none"
+                        onClick={() => handleAwardPoints(id, -1)}
+                      >
+                        −
+                      </button>
+                      <span className="text-sm" style={{ color: TEAM_COLORS[id] }}>{TEAM_NAMES[id]}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {teams.length > 0 && phase !== 'results' && (
+            <div className="rounded-xl bg-f1-card p-4 border border-slate-700/50 h-fit">
+              <h2 className="font-syne text-lg text-white mb-3">Team Roster</h2>
+              <div className="space-y-3">
+                {teams.map((t) => (
+                  <div key={t.id}>
+                    <p className="text-sm font-semibold mb-1" style={{ color: t.color }}>{t.name}</p>
+                    {(t.pseudonyms || []).length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {t.pseudonyms.map((name, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-0.5 rounded text-xs"
+                            style={{ backgroundColor: `${t.color}20`, color: t.color }}
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-slate-600 text-xs">No members</p>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

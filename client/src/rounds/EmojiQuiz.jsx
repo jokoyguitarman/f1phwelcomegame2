@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import socket from '../socket';
 
-const TEAM_NAMES = { 1: 'Blaze', 2: 'Surge', 3: 'Volt', 4: 'Nova', 5: 'Pulse' };
 const TEAM_COLORS = { 1: '#FF5C1A', 2: '#00C4B4', 3: '#FFD600', 4: '#7C3AED', 5: '#F43F8E' };
+
+const RANK_LABELS = ['1st', '2nd', '3rd', '4th', '5th'];
 
 export default function EmojiQuiz() {
   const [emojis, setEmojis] = useState('');
@@ -11,9 +12,10 @@ export default function EmojiQuiz() {
   const [timeLeft, setTimeLeft] = useState(15);
   const [guess, setGuess] = useState('');
   const [feedback, setFeedback] = useState(null);
-  const [correctBanner, setCorrectBanner] = useState(null);
+  const [correctResults, setCorrectResults] = useState([]);
   const [revealedAnswer, setRevealedAnswer] = useState(null);
   const [myTeamAnswered, setMyTeamAnswered] = useState(false);
+  const [waitingForHost, setWaitingForHost] = useState(false);
   const timerRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -27,17 +29,21 @@ export default function EmojiQuiz() {
       setTimeLeft(Math.round(data.timeMs / 1000));
       setGuess('');
       setFeedback(null);
-      setCorrectBanner(null);
+      setCorrectResults([]);
       setRevealedAnswer(null);
       setMyTeamAnswered(false);
+      setWaitingForHost(false);
       inputRef.current?.focus();
     };
 
     const onCorrect = (data) => {
-      setCorrectBanner(data);
+      setCorrectResults((prev) => [...prev, data]);
       if (data.teamId === teamId) {
         setMyTeamAnswered(true);
-        setFeedback({ type: 'correct', message: 'Your team got it!' });
+        setFeedback({
+          type: 'correct',
+          message: `Your team got it! +${data.points} pts (${RANK_LABELS[data.rank - 1] || `#${data.rank}`})`,
+        });
       }
     };
 
@@ -51,16 +57,22 @@ export default function EmojiQuiz() {
       setTimeLeft(0);
     };
 
+    const onWaiting = () => {
+      setWaitingForHost(true);
+    };
+
     socket.on('emoji:question', onQuestion);
     socket.on('guess:correct', onCorrect);
     socket.on('guess:wrong', onWrong);
     socket.on('emoji:timeUp', onTimeUp);
+    socket.on('emoji:waitingForHost', onWaiting);
 
     return () => {
       socket.off('emoji:question', onQuestion);
       socket.off('guess:correct', onCorrect);
       socket.off('guess:wrong', onWrong);
       socket.off('emoji:timeUp', onTimeUp);
+      socket.off('emoji:waitingForHost', onWaiting);
     };
   }, [teamId]);
 
@@ -97,9 +109,10 @@ export default function EmojiQuiz() {
     );
   }
 
+  const canGuess = !myTeamAnswered && timeLeft > 0 && !revealedAnswer && !waitingForHost;
+
   return (
-    <div className="h-full flex flex-col items-center justify-center px-4 py-6 gap-6">
-      {/* Progress bar */}
+    <div className="h-full flex flex-col items-center justify-center px-4 py-6 gap-5">
       <div className="w-full max-w-lg">
         <div className="flex items-center justify-between mb-1">
           <span className="text-slate-400 text-sm font-medium">
@@ -120,18 +133,15 @@ export default function EmojiQuiz() {
         </div>
       </div>
 
-      {/* Emoji display */}
       <div className="flex items-center justify-center min-h-[140px]">
         <span className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl select-none leading-tight text-center">
           {emojis}
         </span>
       </div>
 
-      {/* Guess the movie label */}
       <p className="text-slate-400 text-sm tracking-widest uppercase">Guess the movie</p>
 
-      {/* Input area */}
-      {!myTeamAnswered && timeLeft > 0 && !revealedAnswer && (
+      {canGuess && (
         <form onSubmit={handleGuess} className="w-full max-w-md flex gap-2">
           <input
             ref={inputRef}
@@ -151,7 +161,6 @@ export default function EmojiQuiz() {
         </form>
       )}
 
-      {/* Feedback */}
       {feedback && (
         <div
           className={`px-4 py-2 rounded-lg text-center font-semibold ${
@@ -164,27 +173,41 @@ export default function EmojiQuiz() {
         </div>
       )}
 
-      {/* Team answered waiting state */}
-      {myTeamAnswered && timeLeft > 0 && !revealedAnswer && (
+      {myTeamAnswered && timeLeft > 0 && !revealedAnswer && !waitingForHost && (
         <p className="text-emerald-400 font-medium">Waiting for other teams...</p>
       )}
 
-      {/* Correct guess banner */}
-      {correctBanner && correctBanner.teamId !== teamId && (
-        <div className="px-4 py-2 rounded-lg bg-f1-card border border-slate-600 text-center">
-          <span style={{ color: TEAM_COLORS[correctBanner.teamId] }} className="font-semibold">
-            {correctBanner.teamName}
-          </span>
-          <span className="text-slate-300"> got it right! </span>
-          <span className="text-slate-500 text-sm">({correctBanner.playerName})</span>
+      {correctResults.length > 0 && (
+        <div className="w-full max-w-md space-y-1">
+          {correctResults.map((r, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-f1-card/60 border border-slate-700/50"
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-slate-500 text-xs font-mono w-6">{RANK_LABELS[i]}</span>
+                <span style={{ color: TEAM_COLORS[r.teamId] }} className="font-semibold text-sm">
+                  {r.teamName}
+                </span>
+                <span className="text-slate-500 text-xs">({r.playerName})</span>
+              </span>
+              <span className="text-emerald-400 font-syne font-bold text-sm">+{r.points}</span>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Revealed answer on time-up */}
       {revealedAnswer && (
         <div className="px-6 py-3 rounded-xl bg-f1-card border border-slate-600 text-center">
           <p className="text-slate-400 text-sm mb-1">The answer was</p>
           <p className="text-white font-syne font-bold text-2xl capitalize">{revealedAnswer}</p>
+        </div>
+      )}
+
+      {waitingForHost && (
+        <div className="flex items-center gap-2 text-slate-400">
+          <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+          <span>Waiting for host to continue...</span>
         </div>
       )}
     </div>

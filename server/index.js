@@ -24,10 +24,10 @@ import {
 import { assignTeam } from './teamAssignment.js';
 import {
   QUESTION_TIME_MS,
-  CORRECT_GUESS_POINTS,
   TOTAL_QUESTIONS,
   checkGuess,
   pickQuestions,
+  getPointsForRank,
 } from './rounds/emojiQuiz.js';
 
 const app = express();
@@ -64,6 +64,8 @@ function startEmojiQuiz() {
     questions,
     currentIndex: 0,
     answered: {},
+    correctOrder: [],
+    waitingForHost: false,
   });
   broadcast('round:start', { round: 1, totalQuestions: TOTAL_QUESTIONS });
   sendNextQuestion();
@@ -81,7 +83,13 @@ function sendNextQuestion() {
 
   const q = questions[idx];
   setCurrentQuestion(idx);
-  setRoundState({ ...rs, answered: {}, questionStartedAt: Date.now() });
+  setRoundState({
+    ...rs,
+    answered: {},
+    correctOrder: [],
+    questionStartedAt: Date.now(),
+    waitingForHost: false,
+  });
 
   broadcast('emoji:question', {
     questionNumber: idx + 1,
@@ -94,29 +102,24 @@ function sendNextQuestion() {
 
   if (questionTimer) clearTimeout(questionTimer);
   questionTimer = setTimeout(() => {
-    timeUpAndAdvance();
+    onTimeUp();
   }, QUESTION_TIME_MS);
 }
 
-function timeUpAndAdvance() {
+function onTimeUp() {
   const rs = getRoundState();
   const idx = rs.currentIndex ?? 0;
   const questions = rs.questions || [];
   const q = questions[idx];
+
+  setRoundState({ ...rs, waitingForHost: true });
 
   broadcast('emoji:timeUp', {
     questionNumber: idx + 1,
     answer: q?.answer || '',
   });
 
-  const nextIndex = idx + 1;
-  if (nextIndex >= questions.length) {
-    setTimeout(() => endGame(), 3000);
-    return;
-  }
-
-  setRoundState({ ...rs, currentIndex: nextIndex, answered: {} });
-  setTimeout(() => sendNextQuestion(), 3000);
+  broadcast('emoji:waitingForHost', {});
 }
 
 function endGame() {
@@ -177,13 +180,27 @@ io.on('connection', (socket) => {
     const state = getState();
     if (state.phase !== 'round1') return;
     if (questionTimer) clearTimeout(questionTimer);
+
     const rs = getRoundState();
-    const nextIndex = (rs.currentIndex ?? 0) + 1;
-    if (nextIndex >= (rs.questions?.length || TOTAL_QUESTIONS)) {
+    const questions = rs.questions || [];
+    const idx = rs.currentIndex ?? 0;
+
+    if (!rs.waitingForHost) {
+      setRoundState({ ...rs, waitingForHost: true });
+      broadcast('emoji:timeUp', {
+        questionNumber: idx + 1,
+        answer: questions[idx]?.answer || '',
+      });
+      broadcast('emoji:waitingForHost', {});
+      return;
+    }
+
+    const nextIndex = idx + 1;
+    if (nextIndex >= questions.length) {
       endGame();
       return;
     }
-    setRoundState({ ...rs, currentIndex: nextIndex, answered: {} });
+    setRoundState({ ...rs, currentIndex: nextIndex, answered: {}, correctOrder: [] });
     sendNextQuestion();
   });
 
@@ -199,6 +216,7 @@ io.on('connection', (socket) => {
     if (state.phase !== 'round1') return;
 
     const rs = getRoundState();
+    if (rs.waitingForHost) return;
     const idx = rs.currentIndex ?? 0;
     const questions = rs.questions || [];
     const q = questions[idx];
@@ -211,15 +229,21 @@ io.on('connection', (socket) => {
     const correct = checkGuess(q.answer, guess);
 
     if (correct) {
+      const correctOrder = [...(rs.correctOrder || []), teamId];
+      const rank = correctOrder.length;
+      const points = getPointsForRank(rank);
+
       answered[teamId] = true;
-      setRoundState({ ...rs, answered });
-      addScore(teamId, CORRECT_GUESS_POINTS);
+      setRoundState({ ...rs, answered, correctOrder });
+      addScore(teamId, points);
       const team = getTeamById(teamId);
       broadcast('guess:correct', {
         teamId,
         teamName: team.name,
         playerName: player.pseudonym,
         questionNumber: idx + 1,
+        points,
+        rank,
       });
       broadcast('scores:update', { scores: getScores() });
     } else {

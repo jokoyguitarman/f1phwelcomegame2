@@ -126,6 +126,12 @@ export function setRoundState(partial) {
 
 export function getFinalScores() {
   return Object.entries(state.teams)
-    .map(([id, t]) => ({ teamId: Number(id), name: t.name, color: t.color, score: t.score }))
+    .map(([id, t]) => ({
+      teamId: Number(id),
+      name: t.name,
+      color: t.color,
+      score: t.score,
+      members: t.playerIds.map((sid) => state.players[sid]?.pseudonym).filter(Boolean),
+    }))
     .sort((a, b) => b.score - a.score);
 }

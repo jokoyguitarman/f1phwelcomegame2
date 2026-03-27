@@ -1,6 +1,12 @@
 export const QUESTION_TIME_MS = 15000;
-export const CORRECT_GUESS_POINTS = 1;
 export const TOTAL_QUESTIONS = 10;
+
+const SCORE_BY_RANK = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
+export function getPointsForRank(rank) {
+  if (rank < 1) return 0;
+  return SCORE_BY_RANK[rank - 1] ?? 1;
+}
 
 export const emojiQuestions = [
   { emojis: '🦁👑', answer: 'the lion king' },
